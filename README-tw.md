@@ -1,3 +1,5 @@
+Modified from https://github.com\YamiOdymel\chaturbate-dvr
+
 # Chaturbate 重新錄播 (Alpha)
 
 這個程式能夠監聽指定的 Chaturbate 頻道，並且在該頻道開始直播時自動儲存影片至本機。這樣你就不會錯過任何精彩的事情
