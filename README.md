@@ -1,3 +1,5 @@
+# Modified from https://github.com\YamiOdymel\chaturbate-dvr
+
 # Chaturbate DVR (Alpha)
 
 [[正體中文翻譯點此]](README-tw.md)
