@@ -157,6 +157,13 @@ func (gv *getval) capture() {
 
 		//
 		log.Printf("视频将保存为 \"%s\".", fullfilename)
+		
+		if !IsExist(gv.username+"/"+gv.filename) {
+			err := os.Mkdir(gv.username+"/"+gv.filename, os.ModePerm)
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
 
 		go gv.combineSegment()
 		gv.watchStream(m3u8Source, baseURL)
@@ -223,14 +230,14 @@ func (gv *getval) combineSegment() {
 			continue
 		}
 
-		if !pathx.Exists(fmt.Sprintf("%s/%s~%d.ts", gv.username, gv.filename, index)) {
+		if !pathx.Exists(fmt.Sprintf("%s/%s/%s~%d.ts", gv.username, gv.filename, gv.filename, index)) {
 			if retry >= 5 {
 				index++
 				retry = 0
 				continue
 			}
 			if retry != 0 {
-				log.Printf("不能查找到 %d 片段, 会再试一次. (%d/5)", index, retry)
+				log.Printf("未能查找到 %d 片段, 会再试一次. (%d/5)", index, retry)
 			}
 			retry++
 			<-time.After(time.Duration(1*retry) * time.Second)
@@ -240,11 +247,11 @@ func (gv *getval) combineSegment() {
 			retry = 0
 		}
 		//
-		b, _ := ioutil.ReadFile(fmt.Sprintf("%s/%s~%d.ts", gv.username, gv.filename, index))
+		b, _ := ioutil.ReadFile(fmt.Sprintf("%s/%s/%s~%d.ts", gv.username, gv.filename, gv.filename, index))
 		gv.masterFile.Write(b)
 		log.Printf("插入 %d 片段到主文件. (总计: %d)", index, segmentIndex)
 		//
-		os.Remove(fmt.Sprintf("%s/%s~%d.ts", gv.username, gv.filename, index))
+		//os.Remove(fmt.Sprintf("%s/%s~%d.ts", gv.username, gv.filename, index))
 		//
 		index++
 	}
@@ -259,7 +266,7 @@ func (gv *getval) fetchSegment(segment *m3u8.MediaSegment, baseURL string, index
 		return
 	}
 	//
-	f, err := os.OpenFile(fmt.Sprintf("%s/%s~%d.ts", gv.username, gv.filename, index), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0777)
+	f, err := os.OpenFile(fmt.Sprintf("%s/%s/%s~%d.ts", gv.username, gv.filename, gv.filename, index), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0777)
 	if err != nil {
 		panic(err)
 	}
@@ -307,7 +314,7 @@ func endpoint(c *cli.Context) error {
 	for {
 		// Capture the stream if the user is currently online.
 		if gv.getOnlineStatus() {
-			log.Printf("用户: %s 在线! 开始获取...", gv.username)
+			log.Printf("用户: %s 在线中! 开始获取...", gv.username)
 			gv.capture()
 			segmentIndex = 0
 			bucket = []string{}
@@ -315,7 +322,7 @@ func endpoint(c *cli.Context) error {
 			continue
 		}
 		// Otherwise we keep checking the channel status until the user is online.
-		log.Printf("用户: %s 不在线, %d分钟后再次检查...", gv.username, c.Int("interval"))
+		log.Printf("用户: %s 已离线, %d分钟后再次检查...", gv.username, c.Int("interval"))
 		<-time.After(time.Minute * time.Duration(c.Int("interval")))
 	}
 	return nil
